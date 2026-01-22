@@ -252,7 +252,12 @@
 
   // --- CLOUDINARY LOGIC ---
   const cloudWidget = (linkId, statusId) => {
-    window.cloudinary.openUploadWidget({ cloudName: "dxp01qjvb", uploadPreset: "ml_default", clientAllowedFormats: ["pdf"] }, (err, res) => {
+    window.cloudinary.openUploadWidget({ 
+      cloudName: "dsbzvgotw",
+      uploadPreset: "alinamodiba", 
+      clientAllowedFormats: ["pdf"],
+      resourceType: "raw" 
+    }, (err, res) => {
       if (!err && res.event === "success") {
         document.getElementById(linkId).value = res.info.secure_url;
         document.getElementById(statusId).innerText = "✅ PDF Ready: " + res.info.original_filename;
@@ -272,12 +277,22 @@
 
   document.getElementById('btnPostMat').onclick = async () => {
     const title = document.getElementById('matTitle').value, qual = document.getElementById('matQual').value, link = document.getElementById('matLink').value;
-    if(title && link) await push(ref(db, 'materials'), {title, qual, link});
+    if(title && link) {
+      await push(ref(db, 'materials'), {title, qual, link});
+      document.getElementById('matTitle').value = '';
+      document.getElementById('matLink').value = '';
+      document.getElementById('matFileStatus').innerText = '';
+    }
   };
 
   document.getElementById('btnPostAss').onclick = async () => {
     const title = document.getElementById('assTitle').value, qual = document.getElementById('assQual').value, date = document.getElementById('assDate').value, link = document.getElementById('assLink').value;
-    if(title && link && date) await push(ref(db, 'assignments'), {title, qual, dueDate: date, link});
+    if(title && link && date) {
+      await push(ref(db, 'assignments'), {title, qual, dueDate: date, link});
+      document.getElementById('assTitle').value = '';
+      document.getElementById('assLink').value = '';
+      document.getElementById('assFileStatus').innerText = '';
+    }
   };
 
   document.getElementById('btnAddTT').onclick = async () => {
@@ -308,4 +323,3 @@
 </script>
 </body>
 </html>
-
