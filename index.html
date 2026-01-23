@@ -88,6 +88,9 @@
     .show-toast { display: block !important; animation: fadeInOut 3s forwards; }
     @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, -20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -20px); } }
     .view-link { color: var(--primary); text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    
+    /* Text truncate for content column */
+    .content-preview { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--gray); }
   </style>
 </head>
 <body>
@@ -164,7 +167,7 @@
           </div>
           <div class="card">
             <h3>Recent Announcements</h3>
-            <table><thead><tr><th>Title</th><th>Date</th><th>Action</th></tr></thead><tbody id="announcementList"></tbody></table>
+            <table><thead><tr><th>Title</th><th>Details</th><th>Date</th><th>Action</th></tr></thead><tbody id="announcementList"></tbody></table>
           </div>
         </section>
 
@@ -371,7 +374,12 @@
       snap.forEach(c => {
         const d = c.val();
         const date = d.timestamp ? new Date(d.timestamp).toLocaleDateString() : 'Now';
-        list.innerHTML += `<tr><td>${d.title}</td><td>${date}</td><td><button class="danger" onclick="deleteItemConfirm('announcements/${c.key}', 'Announcement')">Delete</button></td></tr>`;
+        list.innerHTML += `<tr>
+          <td><b>${d.title}</b></td>
+          <td><div class="content-preview">${d.body}</div></td>
+          <td>${date}</td>
+          <td><button class="danger" onclick="deleteItemConfirm('announcements/${c.key}', 'Announcement')">Delete</button></td>
+        </tr>`;
       });
     });
 
