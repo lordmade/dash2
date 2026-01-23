@@ -62,19 +62,19 @@
     .status-pending { background: #fef3c7; color: #92400e; }
     .status-active { background: #d1fae5; color: #065f46; }
 
-    /* CHAT STYLES */
-    #chat-box { height: 400px; overflow-y: auto; padding: 1.5rem; background: #f1f5f9; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
-    .chat-msg { max-width: 80%; padding: 10px 14px; font-size: 13.5px; position: relative; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .chat-msg.admin { align-self: flex-end; background: var(--primary); color: white; border-radius: 15px 15px 2px 15px; }
-    .chat-msg.student { align-self: flex-start; background: white; color: var(--text-main); border: 1px solid var(--border); border-radius: 15px 15px 15px 2px; }
-    .chat-sender { display: block; font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.8; }
-    .chat-time { display: block; font-size: 9px; margin-top: 4px; opacity: 0.7; text-align: right; font-weight: 500; }
+    /* CHAT BUBBLES */
+    #chat-box { height: 450px; overflow-y: auto; padding: 2rem; background: #f1f5f9; border-radius: 16px; display: flex; flex-direction: column; gap: 16px; border: 1px solid var(--border); }
+    .chat-msg { max-width: 75%; padding: 12px 16px; font-size: 14px; position: relative; line-height: 1.5; box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
+    .chat-msg.admin { align-self: flex-end; background: var(--primary); color: white; border-radius: 18px 18px 2px 18px; }
+    .chat-msg.student { align-self: flex-start; background: white; color: var(--text-main); border-radius: 18px 18px 18px 2px; }
+    .chat-sender { display: block; font-size: 11px; font-weight: 700; margin-bottom: 4px; opacity: 0.9; }
+    .chat-time { display: block; font-size: 10px; margin-top: 6px; opacity: 0.7; text-align: right; }
     
-    .chat-actions { display: flex; gap: 8px; position: absolute; top: 0; right: -70px; opacity: 0; transition: 0.2s; }
-    .chat-msg.admin .chat-actions { right: auto; left: -70px; flex-direction: row-reverse; }
+    .chat-actions { display: flex; gap: 4px; position: absolute; top: 0; right: -80px; opacity: 0; transition: 0.3s; }
+    .chat-msg.admin .chat-actions { right: auto; left: -80px; }
     .chat-msg:hover .chat-actions { opacity: 1; }
-    .chat-action-btn { background: none; border: none; padding: 4px; cursor: pointer; color: var(--gray); }
-    .chat-action-btn:hover { color: var(--primary); }
+    .chat-action-btn { background: white; border: 1px solid var(--border); padding: 6px; border-radius: 50%; cursor: pointer; color: var(--gray); display: flex; align-items: center; box-shadow: var(--shadow); }
+    .chat-action-btn:hover { color: var(--primary); transform: scale(1.1); }
     .chat-action-btn.del:hover { color: var(--danger); }
 
     /* REST OF STYLES */
@@ -264,7 +264,7 @@
       cancelBtn.onclick = () => overlay.style.display = 'none';
       
       const okBtn = document.createElement('button');
-      okBtn.innerText = "Yes, Delete"; okBtn.className = "danger";
+      okBtn.innerText = "Proceed"; okBtn.className = "danger";
       okBtn.onclick = () => { onConfirm(); overlay.style.display = 'none'; };
       
       footer.append(cancelBtn, okBtn);
@@ -299,7 +299,7 @@
   async function uploadToCloudinary(file) {
     const formData = new FormData();
     formData.append("file", file);
-    formData.append("upload_preset", CLOUDINARY_PRESET);
+    formData.append("alinamodiba", CLOUDINARY_PRESET);
     formData.append("resource_type", "image"); 
     const resp = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
     const data = await resp.json();
@@ -357,11 +357,11 @@
         box.innerHTML += `
           <div class="chat-msg ${isSelf?'admin':'student'}">
             <div class="chat-actions">
-                <button class="chat-action-btn" onclick="editChatMessage('${c.key}', \`${d.text}\`)"><i data-lucide="edit-2" style="width:14px"></i></button>
+                <button class="chat-action-btn" onclick="editChatMessage('${c.key}', \`${d.text}\`)"><i data-lucide="edit-3" style="width:14px"></i></button>
                 <button class="chat-action-btn del" onclick="deleteChatMessage('${c.key}')"><i data-lucide="trash-2" style="width:14px"></i></button>
             </div>
             <span class="chat-sender">${isSelf?'Admin':d.sender}</span>
-            <div>${d.text}</div>
+            <div class="chat-text">${d.text}</div>
             <span class="chat-time">${timeStr}</span>
           </div>`;
       });
@@ -370,35 +370,42 @@
     });
   }
 
-  // --- DELETE & EDIT LOGIC ---
+  // --- MODAL CHAT ACTIONS ---
   window.deleteChatMessage = (key) => {
     showModal({
       title: "Delete Message?",
-      body: "This message will be permanently removed from Firebase.",
+      body: "Are you sure you want to remove this message from the server? This cannot be undone.",
       type: "confirm",
       onConfirm: () => {
         remove(ref(db, 'chats/' + key));
-        showToast("Message deleted", "#f59e0b");
+        showToast("Message deleted", "#ef4444");
       }
     });
   };
 
   window.editChatMessage = (key, currentText) => {
-    const newText = prompt("Edit your message:", currentText);
+    const newText = prompt("Update message content:", currentText);
     if (newText && newText !== currentText) {
-      update(ref(db, 'chats/' + key), { text: newText });
-      showToast("Message updated");
+      showModal({
+        title: "Confirm Edit",
+        body: `Change message to: "${newText}"?`,
+        type: "confirm",
+        onConfirm: () => {
+          update(ref(db, 'chats/' + key), { text: newText });
+          showToast("Message updated successfully");
+        }
+      });
     }
   };
 
   window.deleteLearnerConfirm = key => {
     showModal({
       title: "Remove Learner?",
-      body: "This will permanently delete the learner from the Firebase database and revoke access.",
+      body: "This will permanently delete the learner from Firebase and revoke their access.",
       type: "confirm",
       onConfirm: () => {
         remove(ref(db, 'learners/' + key));
-        showToast("Learner removed from Firebase", "#f59e0b");
+        showToast("Learner removed", "#f59e0b");
       }
     });
   };
@@ -410,11 +417,11 @@
     const subjects = document.getElementById('learnerSubjects').value;
     if(email && qual) {
       await push(ref(db, 'learners'), {email, assignedQual: qual, subjects, timestamp: serverTimestamp()});
-      showModal({ title: "Enrolled!", body: `${email} has been added.`, type: "success" });
+      showModal({ title: "Enrolled!", body: `${email} successfully added.`, type: "success" });
       document.getElementById('newLearnerEmail').value = '';
       document.getElementById('qualSelect').value = '';
       document.getElementById('learnerSubjects').value = '';
-    } else { showToast("Email and Course required", "#ef4444"); }
+    } else { showToast("Missing fields", "#ef4444"); }
   };
 
   document.getElementById('btnPostMat').onclick = async (e) => {
