@@ -113,12 +113,12 @@
     <nav id="sidebar-nav" style="display:none">
       <ul>
         <li><a class="nav-link active" data-target="invite-sec"><i data-lucide="user-plus"></i><span>Add Learner</span></a></li>
-        <li><a class="nav-link" data-target="announcement-sec"><i data-lucide="megaphone"></i><span>Announcements</span></a></li>
+        <li><a class="nav-link" data-target="announcement-sec"><i data-lucide="megaphone"></i><span>Announcements</span> <span id="ann-unread" class="unread-badge">0</span></a></li>
         <li><a class="nav-link" data-target="directory-sec"><i data-lucide="users"></i><span>Directory</span></a></li>
         <li><a class="nav-link" data-target="materials-sec"><i data-lucide="book-open"></i><span>Materials</span></a></li>
-        <li><a class="nav-link" data-target="assignments-sec"><i data-lucide="file-text"></i><span>Assignments</span></a></li>
+        <li><a class="nav-link" data-target="assignments-sec"><i data-lucide="file-text"></i><span>Assignments</span> <span id="ass-unread" class="unread-badge">0</span></a></li>
         <li><a class="nav-link" data-target="timetable-sec"><i data-lucide="calendar"></i><span>Timetable</span></a></li>
-        <li><a class="nav-link" data-target="chats-sec" id="nav-chat"><i data-lucide="message-square"></i><span>Chat</span> <span id="unread-count" class="unread-badge">0</span></a></li>
+        <li><a class="nav-link" data-target="chats-sec" id="nav-chat"><i data-lucide="message-square"></i><span>Chat</span> <span id="chat-unread" class="unread-badge">0</span></a></li>
         <li><a class="nav-link" data-target="analytics-sec"><i data-lucide="bar-chart-3"></i><span>Analytics</span></a></li>
       </ul>
     </nav>
@@ -279,6 +279,22 @@
   const CLOUDINARY_PRESET = "alinamodiba";
   const courses = ["BCom Accounting", "BSc Computer Science", "LLB Law", "Diploma in IT"];
   
+  // Notification Counters Logic
+  let lastChatCount = parseInt(sessionStorage.getItem('lastChatCount')) || 0;
+  let lastAnnCount = parseInt(sessionStorage.getItem('lastAnnCount')) || 0;
+  let lastAssCount = parseInt(sessionStorage.getItem('lastAssCount')) || 0;
+
+  function updateBadge(id, currentCount, lastCount) {
+    const badge = document.getElementById(id);
+    const unread = currentCount - lastCount;
+    if (unread > 0) {
+      badge.innerText = unread;
+      badge.style.display = 'block';
+    } else {
+      badge.style.display = 'none';
+    }
+  }
+
   function showModal({title, body, type, onConfirm, isEdit = false, currentVal = ""}) {
     const overlay = document.getElementById('modal-overlay');
     const icon = document.getElementById('modal-icon');
@@ -361,7 +377,6 @@
     const datalist = document.getElementById('qualOptions');
     datalist.innerHTML = courses.map(c => `<option value="${c}">${c}</option>`).join('');
 
-    // Global filtering logic
     document.getElementById('analyticsSearch').oninput = (e) => {
       const q = e.target.value.toLowerCase();
       document.querySelectorAll('#analytics-sec table tbody tr').forEach(tr => {
@@ -398,6 +413,7 @@
     });
 
     onValue(ref(db, 'assignments'), snap => {
+      updateBadge('ass-unread', snap.size || 0, lastAssCount);
       const table = document.getElementById('assignmentsAdminTable'); table.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
@@ -406,6 +422,7 @@
     });
 
     onValue(ref(db, 'announcements'), snap => {
+      updateBadge('ann-unread', snap.size || 0, lastAnnCount);
       const list = document.getElementById('announcementList'); list.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
@@ -430,6 +447,9 @@
     });
 
     onValue(ref(db, 'chats'), snap => {
+      const currentChatSize = snap.size || 0;
+      updateBadge('chat-unread', currentChatSize, lastChatCount);
+      
       const box = document.getElementById('chat-box'); box.innerHTML = '';
       snap.forEach(c => {
         const d = c.val(); 
@@ -522,13 +542,45 @@
 
   document.getElementById('btnSendChat').onclick = async () => {
     const text = document.getElementById('chatInput').value;
-    if(text) await push(ref(db, 'chats'), { text, sender: auth.currentUser.email, timestamp: serverTimestamp() });
+    if(text) {
+        await push(ref(db, 'chats'), { text, sender: auth.currentUser.email, timestamp: serverTimestamp() });
+        // Update local seen count immediately so sending doesn't trigger a self-notification
+        onValue(ref(db, 'chats'), s => { 
+            lastChatCount = s.size; 
+            sessionStorage.setItem('lastChatCount', lastChatCount);
+            updateBadge('chat-unread', s.size, lastChatCount);
+        }, {onlyOnce: true});
+    }
     document.getElementById('chatInput').value = '';
   };
 
   document.querySelectorAll('.nav-link').forEach(link => {
     link.onclick = () => {
       const target = link.dataset.target;
+      
+      // Reset logic for notifications when section is clicked
+      if(target === 'chats-sec') {
+        onValue(ref(db, 'chats'), s => { 
+          lastChatCount = s.size; 
+          sessionStorage.setItem('lastChatCount', lastChatCount);
+          updateBadge('chat-unread', s.size, lastChatCount);
+        }, {onlyOnce: true});
+      }
+      if(target === 'announcement-sec') {
+        onValue(ref(db, 'announcements'), s => { 
+          lastAnnCount = s.size; 
+          sessionStorage.setItem('lastAnnCount', lastAnnCount);
+          updateBadge('ann-unread', s.size, lastAnnCount);
+        }, {onlyOnce: true});
+      }
+      if(target === 'assignments-sec') {
+        onValue(ref(db, 'assignments'), s => { 
+          lastAssCount = s.size; 
+          sessionStorage.setItem('lastAssCount', lastAssCount);
+          updateBadge('ass-unread', s.size, lastAssCount);
+        }, {onlyOnce: true});
+      }
+
       document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
       link.classList.add('active');
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
