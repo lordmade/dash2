@@ -77,6 +77,8 @@
       85% { opacity: 1; transform: translate(-50%, 0); }
       100% { opacity: 0; transform: translate(-50%, -20px); }
     }
+    .view-link { color: var(--primary); text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 4px; }
+    .view-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
@@ -138,7 +140,7 @@
           <div class="card">
             <h3>Submission Tracker</h3>
             <table>
-              <thead><tr><th>Student</th><th>Assignment</th><th>Date</th><th>Work</th></tr></thead>
+              <thead><tr><th>Student</th><th>Assignment</th><th>Date</th><th>File</th><th>Action</th></tr></thead>
               <tbody id="submissionTable"></tbody>
             </table>
           </div>
@@ -250,7 +252,6 @@
     document.getElementById('signOutBtn').style.display=user?'block':'none';
     if(user) {
       initApp();
-      if(Notification.permission !== "granted") Notification.requestPermission();
     }
   });
 
@@ -282,8 +283,16 @@
       const table = document.getElementById('submissionTable'); table.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        table.innerHTML += `<tr><td>${d.studentEmail}</td><td>${d.assignmentTitle}</td><td>${new Date(d.timestamp).toLocaleDateString()}</td><td><a href="${d.link}" target="_blank" rel="noopener noreferrer" style="color:var(--primary); font-weight:bold;">View PDF</a></td></tr>`;
+        table.innerHTML += `
+          <tr>
+            <td>${d.studentEmail}</td>
+            <td>${d.assignmentTitle}</td>
+            <td>${new Date(d.timestamp).toLocaleDateString()}</td>
+            <td>PDF Document</td>
+            <td><a href="${d.link}" target="_blank" class="view-link"><i data-lucide="external-link" style="width:14px"></i> Open PDF</a></td>
+          </tr>`;
       });
+      lucide.createIcons();
     });
 
     onValue(ref(db, 'timetable'), snap => {
@@ -306,8 +315,7 @@
         const d = c.val();
         const isSelf = d.sender === auth.currentUser.email;
         const msgDate = new Date(d.timestamp);
-        const dateString = msgDate.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
-        const timeString = d.timestamp ? msgDate.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
+        const dateString = msgDate.toLocaleDateString();
         
         if(dateString !== lastDateLabel) {
             box.innerHTML += `<div class="chat-date-group">${dateString}</div>` ;
@@ -318,20 +326,13 @@
           <div class="chat-msg ${isSelf?'admin':'student'}">
             <span class="chat-sender">${isSelf?'Admin':d.sender}</span>
             ${d.text}
-            <span class="chat-time">${timeString}</span>
           </div>`;
         lastMsg = d;
       });
 
       if(!initialLoad && lastMsg && lastMsg.sender !== auth.currentUser.email) {
         showToast(`New Message: ${lastMsg.text}`, "#2563eb");
-        if(!isChatActive) {
-          unreadCount++;
-          updateUnreadUI();
-          if(Notification.permission === "granted") {
-            new Notification("New LMS Message", { body: `${lastMsg.sender}: ${lastMsg.text}` });
-          }
-        }
+        if(!isChatActive) { unreadCount++; updateUnreadUI(); }
       }
       initialLoad = false;
       box.scrollTop = box.scrollHeight;
@@ -425,10 +426,7 @@
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
       document.getElementById(target).classList.add('active');
       document.getElementById('view-title').textContent = link.querySelector('span').innerText.trim();
-
-      if(target === 'chats-sec') {
-        isChatActive = true; unreadCount = 0; updateUnreadUI();
-      } else { isChatActive = false; }
+      if(target === 'chats-sec') { isChatActive = true; unreadCount = 0; updateUnreadUI(); } else { isChatActive = false; }
     };
   });
 
