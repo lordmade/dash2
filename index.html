@@ -89,7 +89,6 @@
     @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, -20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -20px); } }
     .view-link { color: var(--primary); text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 4px; }
     
-    /* Text truncate for content column */
     .content-preview { max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; color: var(--gray); }
   </style>
 </head>
@@ -182,9 +181,23 @@
             <div class="stat-card"><h4>Total Learners</h4><p id="stat-enrollment">0</p></div>
             <div class="stat-card" style="background:var(--success)"><h4>Work Submissions</h4><p id="stat-submissions">0</p></div>
           </div>
+          
+          <div class="card">
+            <h3>Search Records</h3>
+            <input type="text" id="analyticsSearch" placeholder="Search by student, title, or course..." style="margin-bottom:0">
+          </div>
+
           <div class="card">
             <h3>Submission Tracker</h3>
             <table><thead><tr><th>Student</th><th>Assignment</th><th>Date</th><th>File</th><th>Action</th></tr></thead><tbody id="submissionTable"></tbody></table>
+          </div>
+          <div class="card">
+            <h3>Sent Learning Materials</h3>
+            <table><thead><tr><th>Title</th><th>Course</th><th>File</th><th>Action</th></tr></thead><tbody id="materialsAdminTable"></tbody></table>
+          </div>
+          <div class="card">
+            <h3>Sent Assignments</h3>
+            <table><thead><tr><th>Title</th><th>Course</th><th>Due Date</th><th>File</th><th>Action</th></tr></thead><tbody id="assignmentsAdminTable"></tbody></table>
           </div>
         </section>
 
@@ -266,7 +279,6 @@
   const CLOUDINARY_PRESET = "alinamodiba";
   const courses = ["BCom Accounting", "BSc Computer Science", "LLB Law", "Diploma in IT"];
   
-  // --- MODAL SYSTEM ---
   function showModal({title, body, type, onConfirm, isEdit = false, currentVal = ""}) {
     const overlay = document.getElementById('modal-overlay');
     const icon = document.getElementById('modal-icon');
@@ -349,6 +361,14 @@
     const datalist = document.getElementById('qualOptions');
     datalist.innerHTML = courses.map(c => `<option value="${c}">${c}</option>`).join('');
 
+    // Global filtering logic
+    document.getElementById('analyticsSearch').oninput = (e) => {
+      const q = e.target.value.toLowerCase();
+      document.querySelectorAll('#analytics-sec table tbody tr').forEach(tr => {
+        tr.style.display = tr.innerText.toLowerCase().includes(q) ? '' : 'none';
+      });
+    };
+
     onValue(ref(db, 'learners'), snap => {
       document.getElementById('stat-enrollment').innerText = snap.size || 0;
       const list = document.getElementById('directoryList'); list.innerHTML = '';
@@ -367,6 +387,22 @@
         table.innerHTML += `<tr><td>${d.studentEmail}</td><td>${d.assignmentTitle}</td><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>PDF</td><td><div style="display:flex; gap:8px"><a href="${d.link}" target="_blank" class="view-link">Open</a><button class="danger" style="padding:4px 8px; font-size:10px" onclick="deleteSubmissionConfirm('${c.key}')">Delete</button></div></td></tr>`;
       });
       lucide.createIcons();
+    });
+
+    onValue(ref(db, 'materials'), snap => {
+      const table = document.getElementById('materialsAdminTable'); table.innerHTML = '';
+      snap.forEach(c => {
+        const d = c.val();
+        table.innerHTML += `<tr><td><b>${d.title}</b></td><td>${d.qual}</td><td><a href="${d.link}" target="_blank" class="view-link">View File</a></td><td><button class="danger" onclick="deleteItemConfirm('materials/${c.key}', 'Material')">Delete</button></td></tr>`;
+      });
+    });
+
+    onValue(ref(db, 'assignments'), snap => {
+      const table = document.getElementById('assignmentsAdminTable'); table.innerHTML = '';
+      snap.forEach(c => {
+        const d = c.val();
+        table.innerHTML += `<tr><td><b>${d.title}</b></td><td>${d.qual}</td><td>${d.dueDate}</td><td><a href="${d.link}" target="_blank" class="view-link">View File</a></td><td><button class="danger" onclick="deleteItemConfirm('assignments/${c.key}', 'Assignment')">Delete</button></td></tr>`;
+      });
     });
 
     onValue(ref(db, 'announcements'), snap => {
@@ -414,7 +450,6 @@
     });
   }
 
-  // --- ACTIONS ---
   window.deleteSubmissionConfirm = (key) => {
     showModal({ title: "Delete Submission?", body: "Are you sure? This will remove the learner's uploaded file record permanently.", type: "confirm", onConfirm: () => {
       remove(ref(db, 'submissions/' + key)); showToast("Submission deleted", "#ef4444");
@@ -505,7 +540,6 @@
   document.getElementById('googleSignInBtn').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
   document.getElementById('signOutBtn').onclick = () => signOut(auth);
 
-  // --- REAL-TIME CLOCK LOGIC ---
   function updateClock() {
     const now = new Date();
     const datePart = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
