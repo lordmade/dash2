@@ -239,7 +239,7 @@
     toast.innerText = msg;
     toast.style.background = color;
     toast.classList.remove('show-toast');
-    void toast.offsetWidth; // Trigger reflow for animation
+    void toast.offsetWidth; 
     toast.classList.add('show-toast');
     setTimeout(() => { toast.classList.remove('show-toast'); }, 3000);
   }
@@ -324,6 +324,9 @@
       });
 
       if(!initialLoad && lastMsg && lastMsg.sender !== auth.currentUser.email) {
+        // Pop-up visual notification on screen
+        showToast(`New Message: ${lastMsg.text}`, "#2563eb");
+        
         if(!isChatActive) {
           unreadCount++;
           updateUnreadUI();
