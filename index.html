@@ -125,7 +125,10 @@
   <div class="main-wrapper">
     <header>
       <h2 id="view-title">Add Learner</h2>
-      <button id="signOutBtn" style="display:none;background:transparent;color:var(--text-main);border:1px solid var(--border)">Sign Out</button>
+      <div style="display: flex; align-items: center; gap: 20px;">
+        <div id="live-clock" style="font-size: 13px; color: var(--gray); font-weight: 600; font-family: monospace;"></div>
+        <button id="signOutBtn" style="display:none;background:transparent;color:var(--text-main);border:1px solid var(--border)">Sign Out</button>
+      </div>
     </header>
 
     <main>
@@ -343,13 +346,14 @@
     const datalist = document.getElementById('qualOptions');
     datalist.innerHTML = courses.map(c => `<option value="${c}">${c}</option>`).join('');
 
-    // Learners & Submissions logic same as previous...
     onValue(ref(db, 'learners'), snap => {
       document.getElementById('stat-enrollment').innerText = snap.size || 0;
       const list = document.getElementById('directoryList'); list.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        list.innerHTML += `<tr><td>${d.email}</td><td>${d.assignedQual}</td><td><span class="status-pill ${d.lastLogin?'status-active':'status-pending'}">${d.lastLogin?'Active':'Pending'}</span></td><td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td></tr>`;
+        // Check if lastLogin exists to set active status
+        const isActive = d.lastLogin !== undefined && d.lastLogin !== null;
+        list.innerHTML += `<tr><td>${d.email}</td><td>${d.assignedQual}</td><td><span class="status-pill ${isActive?'status-active':'status-pending'}">${isActive?'Active':'Pending'}</span></td><td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td></tr>`;
       });
     });
 
@@ -363,7 +367,6 @@
       lucide.createIcons();
     });
 
-    // Announcements listener
     onValue(ref(db, 'announcements'), snap => {
       const list = document.getElementById('announcementList'); list.innerHTML = '';
       snap.forEach(c => {
@@ -488,6 +491,17 @@
 
   document.getElementById('googleSignInBtn').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
   document.getElementById('signOutBtn').onclick = () => signOut(auth);
+
+  // --- REAL-TIME CLOCK LOGIC ---
+  function updateClock() {
+    const now = new Date();
+    const datePart = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
+    const timePart = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    const clockEl = document.getElementById('live-clock');
+    if (clockEl) clockEl.innerText = `${datePart} | ${timePart}`;
+  }
+  setInterval(updateClock, 1000);
+  updateClock();
 </script>
 </body>
 </html>
