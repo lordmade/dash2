@@ -47,6 +47,10 @@
     .content-section{display:none}
     .content-section.active{display:block}
     
+    .status-pill { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    .status-pending { background: #fef3c7; color: #92400e; }
+    .status-active { background: #d1fae5; color: #065f46; }
+
     .tt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
     .tt-day-col { background: var(--bg); border-radius: 8px; padding: 10px; border: 1px solid var(--border); min-height: 150px; }
     .tt-day-title { text-align: center; font-weight: 800; font-size: 11px; margin-bottom: 10px; color: var(--primary); }
@@ -202,7 +206,7 @@
 
         <section id="directory-sec" class="content-section">
           <div class="card">
-            <table><thead><tr><th>Email</th><th>Qual</th><th>Action</th></tr></thead><tbody id="directoryList"></tbody></table>
+            <table><thead><tr><th>Email</th><th>Qual</th><th>Status</th><th>Action</th></tr></thead><tbody id="directoryList"></tbody></table>
           </div>
         </section>
 
@@ -259,7 +263,6 @@
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_PRESET);
-    // Setting resource_type to "image" ensures Cloudinary allows PDF viewing in browser
     formData.append("resource_type", "image"); 
     const resp = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
     if(!resp.ok) throw new Error("Cloudinary upload failed");
@@ -275,7 +278,18 @@
       document.getElementById('stat-enrollment').innerText = snap.size || 0;
       const list = document.getElementById('directoryList'); list.innerHTML = '';
       snap.forEach(c => {
-        list.innerHTML += `<tr><td>${c.val().email}</td><td>${c.val().assignedQual}</td><td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td></tr>`;
+        const val = c.val();
+        // Determine status: If lastLogin exists, they are Active, otherwise Pending
+        const statusHtml = val.lastLogin 
+          ? `<span class="status-pill status-active">Active</span>` 
+          : `<span class="status-pill status-pending">Pending</span>`;
+
+        list.innerHTML += `<tr>
+            <td>${val.email}</td>
+            <td>${val.assignedQual}</td>
+            <td>${statusHtml}</td>
+            <td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td>
+        </tr>`;
       });
     });
 
@@ -385,6 +399,7 @@
     const qual = document.getElementById('qualSelect').value;
     const subjects = document.getElementById('learnerSubjects').value;
     if(email && qual) {
+        // Enrolled without a lastLogin timestamp defaults them to "Pending"
         await push(ref(db, 'learners'), {email, assignedQual: qual, subjects, timestamp: serverTimestamp()});
         showToast("Learner Enrolled Successfully");
         document.getElementById('newLearnerEmail').value = '';
