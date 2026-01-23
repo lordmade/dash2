@@ -62,18 +62,28 @@
     .status-pending { background: #fef3c7; color: #92400e; }
     .status-active { background: #d1fae5; color: #065f46; }
 
+    /* CHAT STYLES */
+    #chat-box { height: 400px; overflow-y: auto; padding: 1.5rem; background: #f1f5f9; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
+    .chat-msg { max-width: 80%; padding: 10px 14px; font-size: 13.5px; position: relative; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
+    .chat-msg.admin { align-self: flex-end; background: var(--primary); color: white; border-radius: 15px 15px 2px 15px; }
+    .chat-msg.student { align-self: flex-start; background: white; color: var(--text-main); border: 1px solid var(--border); border-radius: 15px 15px 15px 2px; }
+    .chat-sender { display: block; font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.8; }
+    .chat-time { display: block; font-size: 9px; margin-top: 4px; opacity: 0.7; text-align: right; font-weight: 500; }
+    
+    .chat-actions { display: flex; gap: 8px; position: absolute; top: 0; right: -70px; opacity: 0; transition: 0.2s; }
+    .chat-msg.admin .chat-actions { right: auto; left: -70px; flex-direction: row-reverse; }
+    .chat-msg:hover .chat-actions { opacity: 1; }
+    .chat-action-btn { background: none; border: none; padding: 4px; cursor: pointer; color: var(--gray); }
+    .chat-action-btn:hover { color: var(--primary); }
+    .chat-action-btn.del:hover { color: var(--danger); }
+
     /* REST OF STYLES */
     .tt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
     .tt-day-col { background: var(--bg); border-radius: 8px; padding: 10px; border: 1px solid var(--border); min-height: 150px; }
     .tt-day-title { text-align: center; font-weight: 800; font-size: 11px; margin-bottom: 10px; color: var(--primary); }
     .tt-slot { background: var(--card-bg); padding: 8px; border-radius: 6px; border-left: 3px solid var(--primary); margin-bottom: 5px; font-size: 11px; position: relative; box-shadow: var(--shadow);}
     .tt-del { position: absolute; top: 2px; right: 5px; color: var(--danger); cursor: pointer; font-size: 14px; }
-    #chat-box { height: 400px; overflow-y: auto; padding: 1.5rem; background: #f1f5f9; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
-    .chat-date-group { text-align: center; font-size: 10px; font-weight: 800; color: var(--gray); margin: 15px 0 5px; text-transform: uppercase; letter-spacing: 0.5px; }
-    .chat-msg { max-width: 80%; padding: 10px 14px; font-size: 13.5px; position: relative; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
-    .chat-msg.admin { align-self: flex-end; background: var(--primary); color: white; border-radius: 15px 15px 2px 15px; }
-    .chat-msg.student { align-self: flex-start; background: white; color: var(--text-main); border: 1px solid var(--border); border-radius: 15px 15px 15px 2px; }
-    .chat-sender { display: block; font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.8; }
+    
     #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 12px 24px; border-radius: 50px; font-weight: 600; box-shadow: var(--shadow); z-index: 9999; display: none; }
     .show-toast { display: block !important; animation: fadeInOut 3s forwards; }
     @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, -20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -20px); } }
@@ -219,7 +229,7 @@
 <script type="module">
   import {initializeApp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-app.js";
   import {getAuth,signInWithPopup,GoogleAuthProvider,onAuthStateChanged,signOut} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
-  import {getDatabase,ref,push,onValue,remove,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
+  import {getDatabase,ref,push,onValue,remove,update,serverTimestamp} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-database.js";
 
   const firebaseConfig={
     apiKey:"AIzaSyDLvkRwSpd-hbPaDP31pV1H-4N5_Re-_xc",
@@ -237,9 +247,6 @@
   const CLOUDINARY_PRESET = "alinamodiba";
   const courses = ["BCom Accounting", "BSc Computer Science", "LLB Law", "Diploma in IT"];
   
-  let unreadCount = 0;
-  let isChatActive = false;
-
   // --- MODAL SYSTEM ---
   function showModal({title, body, type, onConfirm}) {
     const overlay = document.getElementById('modal-overlay');
@@ -257,14 +264,14 @@
       cancelBtn.onclick = () => overlay.style.display = 'none';
       
       const okBtn = document.createElement('button');
-      okBtn.innerText = "Yes, Remove"; okBtn.className = "danger";
+      okBtn.innerText = "Yes, Delete"; okBtn.className = "danger";
       okBtn.onclick = () => { onConfirm(); overlay.style.display = 'none'; };
       
       footer.append(cancelBtn, okBtn);
     } else {
       icon.innerHTML = '<i data-lucide="check-circle" style="color:var(--success); width:48px; height:48px"></i>';
       const closeBtn = document.createElement('button');
-      closeBtn.innerText = "Awesome"; closeBtn.className = "success";
+      closeBtn.innerText = "Close"; closeBtn.className = "success";
       closeBtn.onclick = () => overlay.style.display = 'none';
       footer.append(closeBtn);
     }
@@ -308,7 +315,6 @@
       const list = document.getElementById('directoryList'); list.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        // If lastLogin timestamp exists, they are Active, otherwise Pending
         const statusClass = d.lastLogin ? 'status-active' : 'status-pending';
         const statusText = d.lastLogin ? 'Active' : 'Pending';
         
@@ -344,43 +350,73 @@
     onValue(ref(db, 'chats'), snap => {
       const box = document.getElementById('chat-box'); box.innerHTML = '';
       snap.forEach(c => {
-        const d = c.val(); const isSelf = d.sender === auth.currentUser.email;
-        box.innerHTML += `<div class="chat-msg ${isSelf?'admin':'student'}"><span class="chat-sender">${isSelf?'Admin':d.sender}</span>${d.text}</div>`;
+        const d = c.val(); 
+        const isSelf = d.sender === auth.currentUser.email;
+        const timeStr = d.timestamp ? new Date(d.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : '...';
+        
+        box.innerHTML += `
+          <div class="chat-msg ${isSelf?'admin':'student'}">
+            <div class="chat-actions">
+                <button class="chat-action-btn" onclick="editChatMessage('${c.key}', \`${d.text}\`)"><i data-lucide="edit-2" style="width:14px"></i></button>
+                <button class="chat-action-btn del" onclick="deleteChatMessage('${c.key}')"><i data-lucide="trash-2" style="width:14px"></i></button>
+            </div>
+            <span class="chat-sender">${isSelf?'Admin':d.sender}</span>
+            <div>${d.text}</div>
+            <span class="chat-time">${timeStr}</span>
+          </div>`;
       });
       box.scrollTop = box.scrollHeight;
+      lucide.createIcons();
     });
   }
 
+  // --- DELETE & EDIT LOGIC ---
+  window.deleteChatMessage = (key) => {
+    showModal({
+      title: "Delete Message?",
+      body: "This message will be permanently removed from Firebase.",
+      type: "confirm",
+      onConfirm: () => {
+        remove(ref(db, 'chats/' + key));
+        showToast("Message deleted", "#f59e0b");
+      }
+    });
+  };
+
+  window.editChatMessage = (key, currentText) => {
+    const newText = prompt("Edit your message:", currentText);
+    if (newText && newText !== currentText) {
+      update(ref(db, 'chats/' + key), { text: newText });
+      showToast("Message updated");
+    }
+  };
+
+  window.deleteLearnerConfirm = key => {
+    showModal({
+      title: "Remove Learner?",
+      body: "This will permanently delete the learner from the Firebase database and revoke access.",
+      type: "confirm",
+      onConfirm: () => {
+        remove(ref(db, 'learners/' + key));
+        showToast("Learner removed from Firebase", "#f59e0b");
+      }
+    });
+  };
+
+  // --- CORE ACTIONS ---
   document.getElementById('provisionBtn').onclick = async () => {
     const email = document.getElementById('newLearnerEmail').value;
     const qual = document.getElementById('qualSelect').value;
     const subjects = document.getElementById('learnerSubjects').value;
     if(email && qual) {
       await push(ref(db, 'learners'), {email, assignedQual: qual, subjects, timestamp: serverTimestamp()});
-      showModal({
-        title: "Learner Enrolled!",
-        body: `Access has been provisioned for ${email}. They will show as 'Pending' until their first login.`,
-        type: "success"
-      });
+      showModal({ title: "Enrolled!", body: `${email} has been added.`, type: "success" });
       document.getElementById('newLearnerEmail').value = '';
       document.getElementById('qualSelect').value = '';
       document.getElementById('learnerSubjects').value = '';
     } else { showToast("Email and Course required", "#ef4444"); }
   };
 
-  window.deleteLearnerConfirm = key => {
-    showModal({
-      title: "Remove Learner?",
-      body: "Are you sure? This will revoke their access and remove them from the directory. This action is permanent.",
-      type: "confirm",
-      onConfirm: () => {
-        remove(ref(db, 'learners/' + key));
-        showToast("Learner removed successfully", "#f59e0b");
-      }
-    });
-  };
-
-  // --- POSTING UTILS ---
   document.getElementById('btnPostMat').onclick = async (e) => {
     const file = document.getElementById('matFileInput').files[0];
     const title = document.getElementById('matTitle').value;
@@ -412,7 +448,9 @@
 
   document.getElementById('btnSendChat').onclick = async () => {
     const text = document.getElementById('chatInput').value;
-    if(text) await push(ref(db, 'chats'), {text, sender: auth.currentUser.email, timestamp: serverTimestamp()});
+    if(text) {
+      await push(ref(db, 'chats'), { text, sender: auth.currentUser.email, timestamp: serverTimestamp() });
+    }
     document.getElementById('chatInput').value = '';
   };
 
