@@ -259,7 +259,8 @@
     const formData = new FormData();
     formData.append("file", file);
     formData.append("upload_preset", CLOUDINARY_PRESET);
-    formData.append("resource_type", "auto"); 
+    // Setting resource_type to "image" allows PDFs to be delivered as viewable files
+    formData.append("resource_type", "image"); 
     const resp = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
     if(!resp.ok) throw new Error("Cloudinary upload failed");
     const data = await resp.json();
