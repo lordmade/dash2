@@ -351,7 +351,6 @@
       const list = document.getElementById('directoryList'); list.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        // Check if lastLogin exists to set active status
         const isActive = d.lastLogin !== undefined && d.lastLogin !== null;
         list.innerHTML += `<tr><td>${d.email}</td><td>${d.assignedQual}</td><td><span class="status-pill ${isActive?'status-active':'status-pending'}">${isActive?'Active':'Pending'}</span></td><td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td></tr>`;
       });
@@ -362,7 +361,7 @@
       const table = document.getElementById('submissionTable'); table.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        table.innerHTML += `<tr><td>${d.studentEmail}</td><td>${d.assignmentTitle}</td><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>PDF</td><td><a href="${d.link}" target="_blank" class="view-link">Open</a></td></tr>`;
+        table.innerHTML += `<tr><td>${d.studentEmail}</td><td>${d.assignmentTitle}</td><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>PDF</td><td><div style="display:flex; gap:8px"><a href="${d.link}" target="_blank" class="view-link">Open</a><button class="danger" style="padding:4px 8px; font-size:10px" onclick="deleteSubmissionConfirm('${c.key}')">Delete</button></div></td></tr>`;
       });
       lucide.createIcons();
     });
@@ -408,6 +407,12 @@
   }
 
   // --- ACTIONS ---
+  window.deleteSubmissionConfirm = (key) => {
+    showModal({ title: "Delete Submission?", body: "Are you sure? This will remove the learner's uploaded file record permanently.", type: "confirm", onConfirm: () => {
+      remove(ref(db, 'submissions/' + key)); showToast("Submission deleted", "#ef4444");
+    }});
+  };
+
   document.getElementById('btnPostAnn').onclick = async () => {
     const title = document.getElementById('annTitle').value;
     const body = document.getElementById('annBody').value;
