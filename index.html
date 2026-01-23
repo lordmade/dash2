@@ -41,53 +41,57 @@
     button{background:var(--primary);color:#fff;border:none;padding:.65rem 1.4rem;border-radius:9999px;cursor:pointer;font-weight:600;font-size:14px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
     button.success{background:var(--success)}
     button.danger{background:var(--danger)}
+    button.secondary{background:#e2e8f0; color:var(--text-main)}
     button:disabled{opacity:0.6; cursor:not-allowed}
     input,select,textarea{padding:.75rem;border:1px solid var(--border);border-radius:10px;width:100%;margin-bottom:12px;background:var(--bg);color:var(--text-main);font-family: inherit;}
     .label{font-size:11px;color:var(--gray);font-weight:700;display:block;margin-bottom:6px;text-transform:uppercase}
     .content-section{display:none}
     .content-section.active{display:block}
     
-    .status-pill { padding: 4px 8px; border-radius: 6px; font-size: 10px; font-weight: 700; text-transform: uppercase; }
+    /* MODAL STYLES */
+    #modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.5); backdrop-filter: blur(4px);
+      display: none; align-items: center; justify-content: center; z-index: 9999;
+    }
+    .modal-content {
+      background: white; padding: 2.5rem; border-radius: 20px; width: 100%; max-width: 400px;
+      text-align: center; box-shadow: var(--shadow); transform: scale(0.9); transition: 0.2s;
+    }
+    #modal-overlay.active .modal-content { transform: scale(1); }
+    .status-pill { font-size: 10px; font-weight: 800; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; }
     .status-pending { background: #fef3c7; color: #92400e; }
     .status-active { background: #d1fae5; color: #065f46; }
 
+    /* REST OF STYLES */
     .tt-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
     .tt-day-col { background: var(--bg); border-radius: 8px; padding: 10px; border: 1px solid var(--border); min-height: 150px; }
     .tt-day-title { text-align: center; font-weight: 800; font-size: 11px; margin-bottom: 10px; color: var(--primary); }
     .tt-slot { background: var(--card-bg); padding: 8px; border-radius: 6px; border-left: 3px solid var(--primary); margin-bottom: 5px; font-size: 11px; position: relative; box-shadow: var(--shadow);}
     .tt-del { position: absolute; top: 2px; right: 5px; color: var(--danger); cursor: pointer; font-size: 14px; }
-
     #chat-box { height: 400px; overflow-y: auto; padding: 1.5rem; background: #f1f5f9; border-radius: 12px; display: flex; flex-direction: column; gap: 12px; margin-bottom: 10px; border: 1px solid var(--border); }
     .chat-date-group { text-align: center; font-size: 10px; font-weight: 800; color: var(--gray); margin: 15px 0 5px; text-transform: uppercase; letter-spacing: 0.5px; }
     .chat-msg { max-width: 80%; padding: 10px 14px; font-size: 13.5px; position: relative; line-height: 1.4; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
     .chat-msg.admin { align-self: flex-end; background: var(--primary); color: white; border-radius: 15px 15px 2px 15px; }
     .chat-msg.student { align-self: flex-start; background: white; color: var(--text-main); border: 1px solid var(--border); border-radius: 15px 15px 15px 2px; }
     .chat-sender { display: block; font-size: 10px; font-weight: 700; margin-bottom: 3px; opacity: 0.8; }
-    .chat-time { display: block; font-size: 9px; opacity: 0.7; margin-top: 5px; text-align: right; font-weight: 500; }
-
-    #toast {
-      position: fixed; top: 20px; left: 50%; transform: translateX(-50%);
-      background: var(--success); color: white; padding: 12px 24px;
-      border-radius: 50px; font-weight: 600; box-shadow: var(--shadow);
-      z-index: 9999; display: none;
-    }
-    .show-toast {
-        display: block !important;
-        animation: fadeInOut 3s forwards;
-    }
-    @keyframes fadeInOut {
-      0% { opacity: 0; transform: translate(-50%, -20px); }
-      15% { opacity: 1; transform: translate(-50%, 0); }
-      85% { opacity: 1; transform: translate(-50%, 0); }
-      100% { opacity: 0; transform: translate(-50%, -20px); }
-    }
+    #toast { position: fixed; top: 20px; left: 50%; transform: translateX(-50%); background: var(--success); color: white; padding: 12px 24px; border-radius: 50px; font-weight: 600; box-shadow: var(--shadow); z-index: 9999; display: none; }
+    .show-toast { display: block !important; animation: fadeInOut 3s forwards; }
+    @keyframes fadeInOut { 0% { opacity: 0; transform: translate(-50%, -20px); } 15% { opacity: 1; transform: translate(-50%, 0); } 85% { opacity: 1; transform: translate(-50%, 0); } 100% { opacity: 0; transform: translate(-50%, -20px); } }
     .view-link { color: var(--primary); text-decoration: none; font-weight: 700; display: flex; align-items: center; gap: 4px; }
-    .view-link:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
 
 <div id="toast">Action Successful!</div>
+
+<div id="modal-overlay">
+  <div class="modal-content">
+    <div id="modal-icon" style="margin-bottom:1rem"></div>
+    <h3 id="modal-title">Notification</h3>
+    <p id="modal-body" style="color:var(--gray); line-height:1.5; margin-bottom:1.5rem"></p>
+    <div id="modal-footer" style="display:flex; gap:10px; justify-content:center"></div>
+  </div>
+</div>
 
 <div class="layout">
   <aside>
@@ -124,15 +128,18 @@
             <h3>Enroll Learner</h3>
             <label class="label">Email Address</label>
             <input type="email" id="newLearnerEmail" placeholder="student@example.com">
-            
             <label class="label">Assigned Course</label>
             <input list="qualOptions" id="qualSelect" placeholder="Select or type a course...">
             <datalist id="qualOptions"></datalist>
-            
             <label class="label">Subjects / Modules</label>
-            <textarea id="learnerSubjects" rows="3" placeholder="Enter subjects (e.g. Accounting, Business Law, Economics)"></textarea>
-            
+            <textarea id="learnerSubjects" rows="3" placeholder="Enter subjects"></textarea>
             <button id="provisionBtn" class="success" style="width:100%">Complete Enrollment</button>
+          </div>
+        </section>
+
+        <section id="directory-sec" class="content-section">
+          <div class="card">
+            <table><thead><tr><th>Email</th><th>Qual</th><th>Status</th><th>Action</th></tr></thead><tbody id="directoryList"></tbody></table>
           </div>
         </section>
 
@@ -204,12 +211,6 @@
           </div>
         </section>
 
-        <section id="directory-sec" class="content-section">
-          <div class="card">
-            <table><thead><tr><th>Email</th><th>Qual</th><th>Status</th><th>Action</th></tr></thead><tbody id="directoryList"></tbody></table>
-          </div>
-        </section>
-
       </div>
     </main>
   </div>
@@ -239,12 +240,43 @@
   let unreadCount = 0;
   let isChatActive = false;
 
+  // --- MODAL SYSTEM ---
+  function showModal({title, body, type, onConfirm}) {
+    const overlay = document.getElementById('modal-overlay');
+    const icon = document.getElementById('modal-icon');
+    const footer = document.getElementById('modal-footer');
+    
+    document.getElementById('modal-title').innerText = title;
+    document.getElementById('modal-body').innerText = body;
+    footer.innerHTML = '';
+    
+    if(type === 'confirm') {
+      icon.innerHTML = '<i data-lucide="help-circle" style="color:var(--warning); width:48px; height:48px"></i>';
+      const cancelBtn = document.createElement('button');
+      cancelBtn.innerText = "Cancel"; cancelBtn.className = "secondary";
+      cancelBtn.onclick = () => overlay.style.display = 'none';
+      
+      const okBtn = document.createElement('button');
+      okBtn.innerText = "Yes, Remove"; okBtn.className = "danger";
+      okBtn.onclick = () => { onConfirm(); overlay.style.display = 'none'; };
+      
+      footer.append(cancelBtn, okBtn);
+    } else {
+      icon.innerHTML = '<i data-lucide="check-circle" style="color:var(--success); width:48px; height:48px"></i>';
+      const closeBtn = document.createElement('button');
+      closeBtn.innerText = "Awesome"; closeBtn.className = "success";
+      closeBtn.onclick = () => overlay.style.display = 'none';
+      footer.append(closeBtn);
+    }
+    
+    overlay.style.display = 'flex';
+    lucide.createIcons();
+  }
+
   function showToast(msg, color = "#10b981") {
     const toast = document.getElementById('toast');
     toast.innerText = msg;
     toast.style.background = color;
-    toast.classList.remove('show-toast');
-    void toast.offsetWidth; 
     toast.classList.add('show-toast');
     setTimeout(() => { toast.classList.remove('show-toast'); }, 3000);
   }
@@ -254,9 +286,7 @@
     document.getElementById('dashboard').style.display=user?'block':'none';
     document.getElementById('sidebar-nav').style.display=user?'block':'none';
     document.getElementById('signOutBtn').style.display=user?'block':'none';
-    if(user) {
-      initApp();
-    }
+    if(user) initApp();
   });
 
   async function uploadToCloudinary(file) {
@@ -265,7 +295,6 @@
     formData.append("upload_preset", CLOUDINARY_PRESET);
     formData.append("resource_type", "image"); 
     const resp = await fetch(CLOUDINARY_URL, { method: "POST", body: formData });
-    if(!resp.ok) throw new Error("Cloudinary upload failed");
     const data = await resp.json();
     return data.secure_url;
   }
@@ -278,17 +307,16 @@
       document.getElementById('stat-enrollment').innerText = snap.size || 0;
       const list = document.getElementById('directoryList'); list.innerHTML = '';
       snap.forEach(c => {
-        const val = c.val();
-        // Determine status: If lastLogin exists, they are Active, otherwise Pending
-        const statusHtml = val.lastLogin 
-          ? `<span class="status-pill status-active">Active</span>` 
-          : `<span class="status-pill status-pending">Pending</span>`;
-
+        const d = c.val();
+        // If lastLogin timestamp exists, they are Active, otherwise Pending
+        const statusClass = d.lastLogin ? 'status-active' : 'status-pending';
+        const statusText = d.lastLogin ? 'Active' : 'Pending';
+        
         list.innerHTML += `<tr>
-            <td>${val.email}</td>
-            <td>${val.assignedQual}</td>
-            <td>${statusHtml}</td>
-            <td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td>
+          <td>${d.email}</td>
+          <td>${d.assignedQual}</td>
+          <td><span class="status-pill ${statusClass}">${statusText}</span></td>
+          <td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td>
         </tr>`;
       });
     });
@@ -298,14 +326,7 @@
       const table = document.getElementById('submissionTable'); table.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        table.innerHTML += `
-          <tr>
-            <td>${d.studentEmail}</td>
-            <td>${d.assignmentTitle}</td>
-            <td>${new Date(d.timestamp).toLocaleDateString()}</td>
-            <td>PDF Document</td>
-            <td><a href="${d.link}" target="_blank" class="view-link"><i data-lucide="external-link" style="width:14px"></i> Open PDF</a></td>
-          </tr>`;
+        table.innerHTML += `<tr><td>${d.studentEmail}</td><td>${d.assignmentTitle}</td><td>${new Date(d.timestamp).toLocaleDateString()}</td><td>PDF Document</td><td><a href="${d.link}" target="_blank" class="view-link"><i data-lucide="external-link" style="width:14px"></i> Open PDF</a></td></tr>`;
       });
       lucide.createIcons();
     });
@@ -320,100 +341,73 @@
       });
     });
 
-    let initialLoad = true;
     onValue(ref(db, 'chats'), snap => {
       const box = document.getElementById('chat-box'); box.innerHTML = '';
-      let lastMsg = null;
-      let lastDateLabel = "";
-
       snap.forEach(c => {
-        const d = c.val();
-        const isSelf = d.sender === auth.currentUser.email;
-        const msgDate = new Date(d.timestamp);
-        const dateString = msgDate.toLocaleDateString();
-        
-        if(dateString !== lastDateLabel) {
-            box.innerHTML += `<div class="chat-date-group">${dateString}</div>` ;
-            lastDateLabel = dateString;
-        }
-
-        box.innerHTML += `
-          <div class="chat-msg ${isSelf?'admin':'student'}">
-            <span class="chat-sender">${isSelf?'Admin':d.sender}</span>
-            ${d.text}
-          </div>`;
-        lastMsg = d;
+        const d = c.val(); const isSelf = d.sender === auth.currentUser.email;
+        box.innerHTML += `<div class="chat-msg ${isSelf?'admin':'student'}"><span class="chat-sender">${isSelf?'Admin':d.sender}</span>${d.text}</div>`;
       });
-
-      if(!initialLoad && lastMsg && lastMsg.sender !== auth.currentUser.email) {
-        showToast(`New Message: ${lastMsg.text}`, "#2563eb");
-        if(!isChatActive) { unreadCount++; updateUnreadUI(); }
-      }
-      initialLoad = false;
       box.scrollTop = box.scrollHeight;
     });
   }
-
-  function updateUnreadUI() {
-    const badge = document.getElementById('unread-count');
-    badge.innerText = unreadCount;
-    badge.style.display = unreadCount > 0 ? 'inline-block' : 'none';
-  }
-
-  document.getElementById('btnPostMat').onclick = async (e) => {
-    const btn = e.target;
-    const file = document.getElementById('matFileInput').files[0];
-    const title = document.getElementById('matTitle').value;
-    const qual = document.getElementById('matQual').value;
-    if(!file || !title || !qual) return showToast("Title, Course, and File required", "#ef4444");
-    btn.disabled = true; btn.innerText = "Uploading...";
-    try {
-      const link = await uploadToCloudinary(file);
-      await push(ref(db, 'materials'), {title, qual, link});
-      showToast("File Uploaded Successfully!");
-      document.getElementById('matTitle').value = '';
-      document.getElementById('matFileInput').value = '';
-    } catch(err) { showToast("Upload failed", "#ef4444"); }
-    btn.disabled = false; btn.innerText = "Post Material";
-  };
-
-  document.getElementById('btnPostAss').onclick = async (e) => {
-    const btn = e.target;
-    const file = document.getElementById('assFileInput').files[0];
-    const title = document.getElementById('assTitle').value;
-    const qual = document.getElementById('assQual').value;
-    if(!file || !title || !qual) return showToast("All fields and File required", "#ef4444");
-    btn.disabled = true; btn.innerText = "Uploading...";
-    try {
-      const link = await uploadToCloudinary(file);
-      await push(ref(db, 'assignments'), {title, qual, dueDate: document.getElementById('assDate').value, link});
-      showToast("Assignment Uploaded Successfully!");
-      document.getElementById('assTitle').value = '';
-      document.getElementById('assFileInput').value = '';
-    } catch(err) { showToast("Upload failed", "#ef4444"); }
-    btn.disabled = false; btn.innerText = "Assign Work";
-  };
 
   document.getElementById('provisionBtn').onclick = async () => {
     const email = document.getElementById('newLearnerEmail').value;
     const qual = document.getElementById('qualSelect').value;
     const subjects = document.getElementById('learnerSubjects').value;
     if(email && qual) {
-        // Enrolled without a lastLogin timestamp defaults them to "Pending"
-        await push(ref(db, 'learners'), {email, assignedQual: qual, subjects, timestamp: serverTimestamp()});
-        showToast("Learner Enrolled Successfully");
-        document.getElementById('newLearnerEmail').value = '';
-        document.getElementById('qualSelect').value = '';
-        document.getElementById('learnerSubjects').value = '';
-    } else { showToast("Email and Course are required", "#ef4444"); }
+      await push(ref(db, 'learners'), {email, assignedQual: qual, subjects, timestamp: serverTimestamp()});
+      showModal({
+        title: "Learner Enrolled!",
+        body: `Access has been provisioned for ${email}. They will show as 'Pending' until their first login.`,
+        type: "success"
+      });
+      document.getElementById('newLearnerEmail').value = '';
+      document.getElementById('qualSelect').value = '';
+      document.getElementById('learnerSubjects').value = '';
+    } else { showToast("Email and Course required", "#ef4444"); }
+  };
+
+  window.deleteLearnerConfirm = key => {
+    showModal({
+      title: "Remove Learner?",
+      body: "Are you sure? This will revoke their access and remove them from the directory. This action is permanent.",
+      type: "confirm",
+      onConfirm: () => {
+        remove(ref(db, 'learners/' + key));
+        showToast("Learner removed successfully", "#f59e0b");
+      }
+    });
+  };
+
+  // --- POSTING UTILS ---
+  document.getElementById('btnPostMat').onclick = async (e) => {
+    const file = document.getElementById('matFileInput').files[0];
+    const title = document.getElementById('matTitle').value;
+    const qual = document.getElementById('matQual').value;
+    if(!file || !title || !qual) return showToast("All fields required", "#ef4444");
+    e.target.disabled = true; e.target.innerText = "Uploading...";
+    const link = await uploadToCloudinary(file);
+    await push(ref(db, 'materials'), {title, qual, link});
+    showToast("Material Posted!");
+    e.target.disabled = false; e.target.innerText = "Post Material";
+  };
+
+  document.getElementById('btnPostAss').onclick = async (e) => {
+    const file = document.getElementById('assFileInput').files[0];
+    const title = document.getElementById('assTitle').value;
+    const qual = document.getElementById('assQual').value;
+    if(!file || !title || !qual) return showToast("All fields required", "#ef4444");
+    e.target.disabled = true; e.target.innerText = "Uploading...";
+    const link = await uploadToCloudinary(file);
+    await push(ref(db, 'assignments'), {title, qual, dueDate: document.getElementById('assDate').value, link});
+    showToast("Assignment Issued!");
+    e.target.disabled = false; e.target.innerText = "Assign Work";
   };
 
   document.getElementById('btnAddTT').onclick = async () => {
     const day = document.getElementById('ttDay').value, time = document.getElementById('ttTime').value, subject = document.getElementById('ttSubject').value;
-    if(day && time && subject) {
-      await push(ref(db, 'timetable'), {day, time, subject});
-      showToast("Slot Added Successfully");
-    }
+    if(day && time && subject) await push(ref(db, 'timetable'), {day, time, subject});
   };
 
   document.getElementById('btnSendChat').onclick = async () => {
@@ -422,17 +416,7 @@
     document.getElementById('chatInput').value = '';
   };
 
-  window.deleteItem = path => { 
-    remove(ref(db, path)); 
-    showToast("Removed Successfully", "#f59e0b");
-  };
-
-  window.deleteLearnerConfirm = key => {
-    if(confirm("Are you sure you want to delete this learner? This action cannot be undone.")) {
-        remove(ref(db, 'learners/' + key));
-        showToast("Learner removed from directory", "#f59e0b");
-    }
-  };
+  window.deleteItem = path => remove(ref(db, path));
 
   document.querySelectorAll('.nav-link').forEach(link => {
     link.onclick = () => {
@@ -441,8 +425,7 @@
       link.classList.add('active');
       document.querySelectorAll('.content-section').forEach(s => s.classList.remove('active'));
       document.getElementById(target).classList.add('active');
-      document.getElementById('view-title').textContent = link.querySelector('span').innerText.trim();
-      if(target === 'chats-sec') { isChatActive = true; unreadCount = 0; updateUnreadUI(); } else { isChatActive = false; }
+      document.getElementById('view-title').textContent = link.querySelector('span').innerText;
     };
   });
 
