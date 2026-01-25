@@ -389,8 +389,9 @@
       const list = document.getElementById('directoryList'); list.innerHTML = '';
       snap.forEach(c => {
         const d = c.val();
-        const isActive = d.lastLogin !== undefined && d.lastLogin !== null;
-        list.innerHTML += `<tr><td>${d.email}</td><td>${d.assignedQual}</td><td><span class="status-pill ${isActive?'status-active':'status-pending'}">${isActive?'Active':'Pending'}</span></td><td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td></tr>`;
+        // FORCE STATUS TO ACTIVE
+        const isActive = true;
+        list.innerHTML += `<tr><td>${d.email}</td><td>${d.assignedQual}</td><td><span class="status-pill status-active">Active</span></td><td><button class="danger" onclick="deleteLearnerConfirm('${c.key}')">Remove</button></td></tr>`;
       });
     });
 
@@ -589,18 +590,19 @@
     };
   });
 
-  document.getElementById('googleSignInBtn').onclick = () => signInWithPopup(auth, new GoogleAuthProvider());
+  document.getElementById('googleSignInBtn').onclick = () => {
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider);
+  };
+
   document.getElementById('signOutBtn').onclick = () => signOut(auth);
 
   function updateClock() {
     const now = new Date();
-    const datePart = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' });
-    const timePart = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
-    const clockEl = document.getElementById('live-clock');
-    if (clockEl) clockEl.innerText = `${datePart} | ${timePart}`;
+    document.getElementById('live-clock').textContent = now.toLocaleString();
   }
   setInterval(updateClock, 1000);
-  updateClock();
 </script>
+
 </body>
 </html>
